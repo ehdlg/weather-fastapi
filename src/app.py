@@ -1,8 +1,10 @@
+from json import dumps, loads
 from typing import Annotated
 
 from fastapi import FastAPI, Path, Query
 from requests import get
 
+from cache import get_cache, set_cache
 from constants import API_KEY, API_URL
 
 app = FastAPI()
@@ -10,7 +12,7 @@ app = FastAPI()
 
 @app.get("/")
 def hello_world(name: str = "World"):
-    return "Welcome to the Weather API made in FastAPI"
+    return "Welcome to the WeatherAPI"
 
 
 @app.get("/{location}")
@@ -30,6 +32,13 @@ def get_weather(
         location = f"{location},{country}"
 
     URL = f"{API_URL}/{location}?key={API_KEY}&unitGroup={'metric'}"
+
+    cached_data = get_cache(URL)
+
+    if cached_data is not None:
+        return loads(cached_data)
+
     data = get(URL).json()
+    set_cache(URL, dumps(data))
 
     return data
